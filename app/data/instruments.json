@@ -1,0 +1,84 @@
+{
+  "instruments": [
+    {
+      "ticker": "AAPL",
+      "company_name": "Apple Inc.",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "sector": "Technology",
+      "country": "USA",
+      "instrument_type": "Equity",
+      "is_active": true
+    },
+    {
+      "ticker": "MSFT",
+      "company_name": "Microsoft Corporation",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "sector": "Technology",
+      "country": "USA",
+      "instrument_type": "Equity",
+      "is_active": true
+    },
+    {
+      "ticker": "TSLA",
+      "company_name": "Tesla, Inc.",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "sector": "Automotive",
+      "country": "USA",
+      "instrument_type": "Equity",
+      "is_active": true
+    },
+    {
+      "ticker": "VOD",
+      "company_name": "Vodafone Group Plc",
+      "exchange": "LSE",
+      "currency": "GBP",
+      "sector": "Telecommunications",
+      "country": "UK",
+      "instrument_type": "Equity",
+      "is_active": true
+    },
+    {
+      "ticker": "HSBA",
+      "company_name": "HSBC Holdings Plc",
+      "exchange": "LSE",
+      "currency": "GBP",
+      "sector": "Financials",
+      "country": "UK",
+      "instrument_type": "Equity",
+      "is_active": true
+    },
+    {
+      "ticker": "GOVT10Y",
+      "company_name": "UK 10Y Gilt",
+      "exchange": "OTC",
+      "currency": "GBP",
+      "sector": "Government",
+      "country": "UK",
+      "instrument_type": "Bond",
+      "is_active": true
+    },
+    {
+      "ticker": "SPY",
+      "company_name": "SPDR S&P 500 ETF Trust",
+      "exchange": "NYSE",
+      "currency": "USD",
+      "sector": "ETF",
+      "country": "USA",
+      "instrument_type": "ETF",
+      "is_active": true
+    },
+    {
+      "ticker": "OLDCO",
+      "company_name": "Old Company Ltd",
+      "exchange": "LSE",
+      "currency": "GBP",
+      "sector": "Industrial",
+      "country": "UK",
+      "instrument_type": "Equity",
+      "is_active": false
+    }
+  ]
+}
