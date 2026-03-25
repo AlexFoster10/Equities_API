@@ -3,6 +3,7 @@ import pathlib, json, sys
 import pandas as pd
 
 from core.logger import get_logger
+from models.instrument import Instrument
 
 logger = get_logger()
 
@@ -58,7 +59,7 @@ data = {"ticker": "TestNewTickerAgain",
          "instrument_type": "Equity", 
          "is_active": True}
 
-def add_entry_ins_db(entry):
+def add_entry_instrument_db(entry : Instrument):
     for key, value in entry.items():
         print(f"{key}: {value} ({type(value)})")
     try:
@@ -92,15 +93,4 @@ def add_entry_ins_db(entry):
     except Exception as e:
         logger.error(f"Error occurred while appending to Instruments table: {str(e)}")
         
-
-
-
-
-def main():
-    print(load_instruments())
-    load_tables_db()
-    #add_entry_ins_db(data)
-
-if __name__ == "__main__":
-    main()
 
