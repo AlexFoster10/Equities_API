@@ -15,6 +15,8 @@ logger = logging.getLogger("app_logger")
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 
+
+#define pydantic model
 class Instrument(BaseModel):
     ticker: str
     company_name: str
@@ -26,6 +28,7 @@ class Instrument(BaseModel):
     is_active: bool
 
 
+#load file data into variables
 with open("app/data/instruments.json") as f:
     instruments = json.load(f)
     instruments = instruments["instruments"]
@@ -35,6 +38,8 @@ with open("app/data/prices.json") as f:
     prices = prices["prices"]
 
 
+
+#simple endpoints to return basic data
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
@@ -48,6 +53,8 @@ async def get_instruments():
 async def get_prices():
     return prices
 
+
+#allows a user to search through instruments.json via any of the metrics
 @app.get("/instruments/search")
 async def search_instruments(
     sector: Optional[str] = None,
@@ -82,20 +89,23 @@ async def search_instruments(
     else:
         return results
 
+
+
+#allows a user to add instruments 
 @app.post("/instruments", response_model=Instrument, status_code=201)
 async def create_instrument(new_instrument: Instrument):
 
     if " " in new_instrument.ticker:
         logger.error(f"Ticker is not valid: {new_instrument.ticker}")
         raise HTTPException(status_code=400, detail="Invalid ticker")
-    # 1. Check for duplicates
+
     try:
         for instrument in instruments:
             if instrument["ticker"].upper() == new_instrument.ticker.upper():
                 logger.info(f"Ticker already exists: {new_instrument.ticker.upper()}")
                 raise HTTPException(status_code=409, detail="Instrument with this ticker already exists")
         
-        # 2. Add to dataset
+
         instruments.append(new_instrument.model_dump())
         temp = {"instruments" : instruments}
         with open("app/data/instruments.json", "w") as f:
@@ -108,7 +118,10 @@ async def create_instrument(new_instrument: Instrument):
     except Exception as e:
         logger.error(f"Error occurred while appending ticker: {str(e)}")
         raise HTTPException(status_code=500, detail="Bad request")
+    
 
+
+#allows a user to add instruments or edits existing instruments
 @app.put("/instruments/{ticker}", response_model=Instrument, status_code=200)
 async def update_instrument(ticker : str, new_instrument : Instrument):
     new_instrument.ticker = ticker
@@ -142,7 +155,10 @@ async def update_instrument(ticker : str, new_instrument : Instrument):
     except Exception as e:
         logger.error(f"Error occurred while searching for/appending instrument with ticker: {ticker} - {str(e)}")
         raise HTTPException(status_code=500, detail="Bad request")
-    
+
+
+
+#allows a user to delete an item from instruments by ticker
 @app.delete("/instruments/{ticker}", status_code=200)
 async def delete_instrument(ticker : str):
     if " " in ticker:
@@ -172,6 +188,8 @@ async def delete_instrument(ticker : str):
         raise HTTPException(status_code=500, detail="Bad request")
     
 
+
+#allows a user to retrieve an item by its ticker
 @app.get("/instruments/{ticker}",status_code=200)
 async def get_instrument(ticker: str):
 
@@ -194,6 +212,9 @@ async def get_instrument(ticker: str):
         logger.error(f"Error occurred while searching for instrument with ticker: {ticker} - {str(e)}")
         raise HTTPException(status_code=500, detail="Bad request")
 
+
+
+##allows a user to retrieve an item by its ticker and display its price data
 @app.get("/instruments/{ticker}/price",status_code=200)
 @app.get("/instruments/{ticker}/prices",status_code=200)
 async def get_price(ticker: str):
