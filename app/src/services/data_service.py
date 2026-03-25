@@ -2,7 +2,7 @@ import json, sqlite3, pathlib, sys
 import pathlib, json, sys
 import pandas as pd
 
-from app.src.core.logger import get_logger
+from core.logger import get_logger
 
 logger = get_logger()
 
@@ -33,15 +33,21 @@ def save_prices(prices):
 def load_tables_db():
     try:
         conn = sqlite3.connect("app/data/equities.db")
-        ins = pd.read_sql_query("SELECT * FROM Instruments",conn)
-        pri = pd.read_sql_query("SELECT * FROM Prices",conn)
-        print(ins.to_string())
-        print(pri.to_string())
+        ins_df = pd.read_sql_query("SELECT * FROM Instruments",conn)
+        
+        ins_dict = ins_df.to_dict(orient='records')
+        for ins in ins_dict:
+            ins['is_active'] = bool(ins['is_active'])
+
+        pri_df = pd.read_sql_query("SELECT * FROM Prices", conn)
+        pri_dict = pri_df.to_dict(orient='records')
         conn.close()
-        return ins, pri
+        
+
+        return ins_dict, pri_dict
     except Exception as e:
         logger.error(f"Error loading the database: {e}")
-        return
+        return [],[]
 
 data = {"ticker": "TestNewTickerAgain", 
          "company_name": "Apple Inc.", 
@@ -91,8 +97,9 @@ def add_entry_ins_db(entry):
 
 
 def main():
-    #load_tables_db()
-    add_entry_ins_db(data)
+    print(load_instruments())
+    load_tables_db()
+    #add_entry_ins_db(data)
 
 if __name__ == "__main__":
     main()

@@ -17,7 +17,8 @@ logger = get_logger()
 #simple endpoints to return basic data
 @router.get("/")
 async def get_instruments():
-    return instruments
+    ins, pri = ds.load_tables_db()
+    return ins
 
 #allows a user to search through instruments.json via any of the metrics
 @router.get("/search")
@@ -31,7 +32,9 @@ async def search_instruments(
 ):
     results = []
 
-    for i in instruments:
+    ins, pri = ds.load_tables_db()
+
+    for i in ins:
         if sector and i["sector"].lower() != sector.lower():
             continue
         if exchange and i["exchange"].lower() != exchange.lower():
