@@ -65,16 +65,12 @@ async def create_instrument(new_instrument: Instrument):
         logger.error(f"Ticker is not valid: {new_instrument.ticker}")
         raise HTTPException(status_code=400, detail="Invalid ticker")
 
-    try:
-        for instrument in instruments:
-            if instrument["ticker"].upper() == new_instrument.ticker.upper():
-                logger.info(f"Ticker already exists: {new_instrument.ticker.upper()}")
-                raise HTTPException(status_code=409, detail="Instrument with this ticker already exists")
-        
-
+    try:   
+        res = ds.add_entry_instrument_db(new_instrument)
         logger.info(f"Ticker created: {new_instrument.ticker.upper()}")
-        instruments.append(new_instrument.model_dump())
-        ds.save_instruments(instruments)
+        if res == 0:
+            raise HTTPException(status_code=409, detail="Instrument with this ticker already exists")
+        
         return new_instrument
     
     except HTTPException:

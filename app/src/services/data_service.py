@@ -1,6 +1,7 @@
 import json, sqlite3, pathlib, sys
 import pathlib, json, sys
 import pandas as pd
+from fastapi import APIRouter, HTTPException
 
 from core.logger import get_logger
 from models.instrument import Instrument
@@ -60,20 +61,18 @@ data = {"ticker": "TestNewTickerAgain",
          "is_active": True}
 
 def add_entry_instrument_db(entry : Instrument):
-    for key, value in entry.items():
-        print(f"{key}: {value} ({type(value)})")
     try:
         conn = sqlite3.connect("app/data/equities.db", timeout=10)
         cursor = conn.cursor()
         # Extract and cast values to safe types
-        ticker = str(entry.get("ticker")).strip().upper()
-        company_name = str(entry.get("company_name"))
-        exchange = str(entry.get("exchange"))
-        currency = str(entry.get("currency"))
-        sector = str(entry.get("sector"))
-        country = str(entry.get("country"))
-        instrument_type = str(entry.get("instrument_type"))
-        is_active = int(bool(entry.get("is_active")))  # True -> 1, False -> 0
+        ticker = entry.ticker.strip().upper()
+        company_name = entry.company_name
+        exchange = entry.exchange
+        currency = str(entry.currency)  # if Currency is an Enum
+        sector = entry.sector
+        country = entry.country
+        instrument_type = entry.instrument_type
+        is_active = int(entry.is_active)  # True -> 1, False -> 0
 
         # Insert into SQLite
         cursor.execute("""
@@ -88,8 +87,10 @@ def add_entry_instrument_db(entry : Instrument):
 
         if cursor.rowcount == 0:
             logger.info(f"Ticker already present in table")
+            return 0
         else:
             logger.info(f"Successfully appended to Instruments table")
+            return 1
     except Exception as e:
         logger.error(f"Error occurred while appending to Instruments table: {str(e)}")
         
