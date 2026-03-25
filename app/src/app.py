@@ -85,16 +85,25 @@ async def search_instruments(
 @app.post("/instruments", response_model=Instrument, status_code=201)
 async def create_instrument(new_instrument: Instrument):
     # 1. Check for duplicates
-    for instrument in instruments:
-        if instrument["ticker"].upper() == new_instrument.ticker.upper():
-            logger.info(f"Ticker already exists: {new_instrument.ticker.upper()}")
-            raise HTTPException(status_code=400, detail="Instrument with this ticker already exists")
-    
-    # 2. Add to dataset
-    instruments.append(new_instrument.dict())
+    try:
+        for instrument in instruments:
+            if instrument["ticker"].upper() == new_instrument.ticker.upper():
+                logger.info(f"Ticker already exists: {new_instrument.ticker.upper()}")
+                raise HTTPException(status_code=409, detail="Instrument with this ticker already exists")
+        
+        # 2. Add to dataset
+        instruments.append(new_instrument.model_dump())
+        with open("app/data/instruments.json", "w") as f:
+            json.dump(instruments, f)
+        return new_instrument
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error occurred while appending ticker: {str(e)}")
+        raise HTTPException(status_code=500, detail="Bad request")
 
     # 3. Return the created instrument
-    return new_instrument
+    
 
 @app.get("/instruments/{ticker}",status_code=200)
 async def get_instrument(ticker: str):
