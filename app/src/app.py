@@ -84,6 +84,10 @@ async def search_instruments(
 
 @app.post("/instruments", response_model=Instrument, status_code=201)
 async def create_instrument(new_instrument: Instrument):
+
+    if " " in new_instrument.ticker:
+        logger.error(f"Ticker is not valid: {new_instrument.ticker}")
+        raise HTTPException(status_code=400, detail="Invalid ticker")
     # 1. Check for duplicates
     try:
         for instrument in instruments:
@@ -93,23 +97,86 @@ async def create_instrument(new_instrument: Instrument):
         
         # 2. Add to dataset
         instruments.append(new_instrument.model_dump())
+        temp = {"instruments" : instruments}
         with open("app/data/instruments.json", "w") as f:
-            json.dump(instruments, f)
+            json.dump(temp, f)
         return new_instrument
+    
     except HTTPException:
         raise
+
     except Exception as e:
         logger.error(f"Error occurred while appending ticker: {str(e)}")
         raise HTTPException(status_code=500, detail="Bad request")
 
-    # 3. Return the created instrument
+@app.put("/instruments/{ticker}", response_model=Instrument, status_code=200)
+async def update_instrument(ticker : str, new_instrument : Instrument):
+    new_instrument.ticker = ticker
+    if " " in ticker:
+        logger.error(f"Ticker is not valid: {ticker}")
+        raise HTTPException(status_code=400, detail="Invalid ticker")
+    
+    try:
+        for instrument in instruments:
+            if instrument["ticker"] == ticker:
+
+                instruments.pop(instruments.index(instrument))
+                instruments.append(new_instrument.model_dump())
+                temp = {"instruments" : instruments}
+                with open("app/data/instruments.json", "w") as f:
+                    json.dump(temp, f)
+                logger.info(f"Instrument found with ticker, updated successfully: {ticker}")
+                return new_instrument
+        
+
+        instruments.append(new_instrument.model_dump())
+        temp = {"instruments" : instruments}
+        with open("app/data/instruments.json", "w") as f:
+            json.dump(temp, f)
+        logger.info(f"Ticker could not be located, creating new entry: {ticker}")
+        raise HTTPException(status_code=404, detail="Instrument not found, new entry created")
+    
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error(f"Error occurred while searching for/appending instrument with ticker: {ticker} - {str(e)}")
+        raise HTTPException(status_code=500, detail="Bad request")
+    
+@app.delete("/instruments/{ticker}", status_code=200)
+async def delete_instrument(ticker : str):
+    if " " in ticker:
+        logger.error(f"Ticker is not valid: {ticker}")
+        raise HTTPException(status_code=400, detail="Invalid ticker")
+    
+    try:
+        for instrument in instruments:
+            if instrument["ticker"] == ticker:
+
+                deleted = instruments.pop(instruments.index(instrument))
+                temp = {"instruments" : instruments}
+                with open("app/data/instruments.json", "w") as f:
+                    json.dump(temp, f)
+                logger.info(f"Instrument found with ticker, deleted successfully: {ticker}")
+                return 
+
+        logger.info(f"Ticker could not be located: {ticker}")
+        raise HTTPException(status_code=404, detail="Bad request")
+        
+    
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error(f"Error occurred while searching for instrument with ticker: {ticker} - {str(e)}")
+        raise HTTPException(status_code=500, detail="Bad request")
     
 
 @app.get("/instruments/{ticker}",status_code=200)
 async def get_instrument(ticker: str):
 
-    if not ticker.isalpha():
-        logger.error(f"Ticker is not alphabetical: {ticker}")
+    if " " in ticker:
+        logger.error(f"Ticker is not valid: {ticker}")
         raise HTTPException(status_code=400, detail="Invalid ticker")
     
     try:
@@ -117,7 +184,7 @@ async def get_instrument(ticker: str):
             if instrument["ticker"] == ticker:
                 logger.info(f"Instrument found with ticker: {ticker}")
                 return instrument
-        logger.error(f"Error occurred while searching for instrument with ticker: {ticker}")
+        logger.info(f"Ticker not located: {ticker}")
         raise HTTPException(status_code=404, detail="Instrument not found")
     
     except HTTPException:
@@ -131,8 +198,8 @@ async def get_instrument(ticker: str):
 @app.get("/instruments/{ticker}/prices",status_code=200)
 async def get_price(ticker: str):
 
-    if not ticker.isalpha():
-        logger.error(f"Ticker is not alphabetical: {ticker}")
+    if " " in ticker:
+        logger.error(f"Ticker is not valid: {ticker}")
         raise HTTPException(status_code=400, detail="Invalid ticker")
     
     try:
