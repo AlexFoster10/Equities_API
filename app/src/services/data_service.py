@@ -1,8 +1,8 @@
 import json, sqlite3, pathlib, sys
+import pathlib, json, sys
 import pandas as pd
-temp = pathlib.Path(__file__).parent.resolve().as_posix()
-sys.path.append(temp)
-from core.logger import get_logger
+
+from app.src.core.logger import get_logger
 
 logger = get_logger()
 
@@ -30,7 +30,7 @@ def save_prices(prices):
         json.dump({"prices": prices}, f,  default=str)
 
 
-def load_instruments_db():
+def load_tables_db():
     # try:
     #     conn = sqlite3.connect("app/data/equities.db")
     #     cur = conn.cursor()
@@ -45,10 +45,12 @@ def load_instruments_db():
         conn.close()
     except Exception as e:
         logger.error(f"Error loading the database: {e}")
+        return
 
 
 def main():
-    load_instruments_db()
+    print(sys.path)
+    load_tables_db()
 
 if __name__ == "__main__":
     main()
