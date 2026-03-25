@@ -37,12 +37,13 @@ def load_tables_db():
         pri = pd.read_sql_query("SELECT * FROM Prices",conn)
         print(ins.to_string())
         print(pri.to_string())
+        conn.close()
         return ins, pri
     except Exception as e:
         logger.error(f"Error loading the database: {e}")
         return
 
-data = {"ticker": "AAadswPL", 
+data = {"ticker": "TestNewTickerAgain", 
          "company_name": "Apple Inc.", 
          "exchange": "NASDAQ", 
          "currency": "USD", 
@@ -52,12 +53,36 @@ data = {"ticker": "AAadswPL",
          "is_active": True}
 
 def add_entry_ins_db(entry):
+    for key, value in entry.items():
+        print(f"{key}: {value} ({type(value)})")
     try:
-        conn = sqlite3.connect("app/data/equities.db")
-        entry = pd.json_normalize(entry)
-        entry.to_sql("Instruments", conn, if_exists='append', index= False)
+        conn = sqlite3.connect("app/data/equities.db", timeout=10)
+        cursor = conn.cursor()
+        # Extract and cast values to safe types
+        ticker = str(entry.get("ticker")).strip().upper()
+        company_name = str(entry.get("company_name"))
+        exchange = str(entry.get("exchange"))
+        currency = str(entry.get("currency"))
+        sector = str(entry.get("sector"))
+        country = str(entry.get("country"))
+        instrument_type = str(entry.get("instrument_type"))
+        is_active = int(bool(entry.get("is_active")))  # True -> 1, False -> 0
+
+        # Insert into SQLite
+        cursor.execute("""
+            INSERT OR IGNORE INTO Instruments
+            (ticker, company_name, exchange, currency, sector, country, instrument_type, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (ticker, company_name, exchange, currency, sector, country, instrument_type, is_active))
+        
+
+        conn.commit()
         conn.close()
-        logger.info(f"Successfully appended to Instruments table")
+
+        if cursor.rowcount == 0:
+            logger.info(f"Ticker already present in table")
+        else:
+            logger.info(f"Successfully appended to Instruments table")
     except Exception as e:
         logger.error(f"Error occurred while appending to Instruments table: {str(e)}")
         
@@ -66,8 +91,7 @@ def add_entry_ins_db(entry):
 
 
 def main():
-    print(sys.path)
-    load_tables_db()
+    #load_tables_db()
     add_entry_ins_db(data)
 
 if __name__ == "__main__":
