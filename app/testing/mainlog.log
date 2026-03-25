@@ -1,0 +1,2 @@
+2026-03-25 16:48:19,780 - ERROR - Error occurred while appending price: local variable 'e' referenced before assignment
+2026-03-25 16:48:38,016 - ERROR - Error occurred while appending price: local variable 'e' referenced before assignment

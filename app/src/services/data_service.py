@@ -21,4 +21,4 @@ def load_prices():
     
 def save_prices(prices):
     with open(PRICES_FILE, "w") as f:
-        json.dump({"prices": prices}, f)
+        json.dump({"prices": prices}, f,  default=str)
