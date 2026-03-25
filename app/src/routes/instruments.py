@@ -1,61 +1,33 @@
-from fastapi import FastAPI, Response, status, HTTPException, Query
+from fastapi import APIRouter, HTTPException
+from src.models.instrument import Instrument
+import src.services.data_service as ds
+from src.core.logger import get_logger
 from typing import Optional
-from pydantic import BaseModel
 import pathlib, json
 import sys
-import logging
 temp = pathlib.Path(__file__).parent.parent.parent.resolve().as_posix()
 sys.path.append(temp)
-app = FastAPI()
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-handler = logging.FileHandler("app/testing/mainlog.log", mode="w")      
-handler.setFormatter(formatter)
 
-logger = logging.getLogger("app_logger")
-logger.setLevel(logging.INFO)
-logger.addHandler(handler)
+instruments = ds.load_instruments()
+prices = ds.load_prices()
 
-
-#define pydantic model
-class Instrument(BaseModel):
-    ticker: str
-    company_name: str
-    exchange: str
-    currency: str
-    sector: str
-    country: str
-    instrument_type: str
-    is_active: bool
-
-
-#load file data into variables
-with open("app/data/instruments.json") as f:
-    instruments = json.load(f)
-    instruments = instruments["instruments"]
-
-with open("app/data/prices.json") as f:
-    prices = json.load(f)
-    prices = prices["prices"]
-
-
+router = APIRouter()
+logger = get_logger()
 
 #simple endpoints to return basic data
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@app.get("/instruments")
+@router.get("/")
 async def get_instruments():
     return instruments
 
-@app.get("/instruments/price")
-@app.get("/instruments/prices")
+##allows a user to access price data
+@router.get("/price")
+@router.get("/prices")
 async def get_prices():
     return prices
 
 
 #allows a user to search through instruments.json via any of the metrics
-@app.get("/instruments/search")
+@router.get("/search")
 async def search_instruments(
     sector: Optional[str] = None,
     exchange: Optional[str] = None,
@@ -88,11 +60,9 @@ async def search_instruments(
 
     else:
         return results
-
-
-
+    
 #allows a user to add instruments 
-@app.post("/instruments", response_model=Instrument, status_code=201)
+@router.post("/", response_model=Instrument, status_code=201)
 async def create_instrument(new_instrument: Instrument):
 
     if " " in new_instrument.ticker:
@@ -107,9 +77,7 @@ async def create_instrument(new_instrument: Instrument):
         
 
         instruments.append(new_instrument.model_dump())
-        temp = {"instruments" : instruments}
-        with open("app/data/instruments.json", "w") as f:
-            json.dump(temp, f)
+        ds.save_instruments(instruments)
         return new_instrument
     
     except HTTPException:
@@ -119,10 +87,8 @@ async def create_instrument(new_instrument: Instrument):
         logger.error(f"Error occurred while appending ticker: {str(e)}")
         raise HTTPException(status_code=500, detail="Bad request")
     
-
-
 #allows a user to add instruments or edits existing instruments
-@app.put("/instruments/{ticker}", response_model=Instrument, status_code=200)
+@router.put("/{ticker}", response_model=Instrument, status_code=200)
 async def update_instrument(ticker : str, new_instrument : Instrument):
     new_instrument.ticker = ticker
     if " " in ticker:
@@ -135,17 +101,13 @@ async def update_instrument(ticker : str, new_instrument : Instrument):
 
                 instruments.pop(instruments.index(instrument))
                 instruments.append(new_instrument.model_dump())
-                temp = {"instruments" : instruments}
-                with open("app/data/instruments.json", "w") as f:
-                    json.dump(temp, f)
+                ds.save_instruments(instruments)
                 logger.info(f"Instrument found with ticker, updated successfully: {ticker}")
                 return new_instrument
         
 
         instruments.append(new_instrument.model_dump())
-        temp = {"instruments" : instruments}
-        with open("app/data/instruments.json", "w") as f:
-            json.dump(temp, f)
+        ds.save_instruments(instruments)
         logger.info(f"Ticker could not be located, creating new entry: {ticker}")
         raise HTTPException(status_code=404, detail="Instrument not found, new entry created")
     
@@ -155,11 +117,9 @@ async def update_instrument(ticker : str, new_instrument : Instrument):
     except Exception as e:
         logger.error(f"Error occurred while searching for/appending instrument with ticker: {ticker} - {str(e)}")
         raise HTTPException(status_code=500, detail="Bad request")
-
-
-
+    
 #allows a user to delete an item from instruments by ticker
-@app.delete("/instruments/{ticker}", status_code=200)
+@router.delete("/{ticker}", status_code=200)
 async def delete_instrument(ticker : str):
     if " " in ticker:
         logger.error(f"Ticker is not valid: {ticker}")
@@ -170,9 +130,7 @@ async def delete_instrument(ticker : str):
             if instrument["ticker"] == ticker:
 
                 deleted = instruments.pop(instruments.index(instrument))
-                temp = {"instruments" : instruments}
-                with open("app/data/instruments.json", "w") as f:
-                    json.dump(temp, f)
+                ds.save_instruments(instruments)
                 logger.info(f"Instrument found with ticker, deleted successfully: {ticker}")
                 return 
 
@@ -187,36 +145,9 @@ async def delete_instrument(ticker : str):
         logger.error(f"Error occurred while searching for instrument with ticker: {ticker} - {str(e)}")
         raise HTTPException(status_code=500, detail="Bad request")
     
-
-
-#allows a user to retrieve an item by its ticker
-@app.get("/instruments/{ticker}",status_code=200)
-async def get_instrument(ticker: str):
-
-    if " " in ticker:
-        logger.error(f"Ticker is not valid: {ticker}")
-        raise HTTPException(status_code=400, detail="Invalid ticker")
-    
-    try:
-        for instrument in instruments:
-            if instrument["ticker"] == ticker:
-                logger.info(f"Instrument found with ticker: {ticker}")
-                return instrument
-        logger.info(f"Ticker not located: {ticker}")
-        raise HTTPException(status_code=404, detail="Instrument not found")
-    
-    except HTTPException:
-        raise
-
-    except Exception as e:
-        logger.error(f"Error occurred while searching for instrument with ticker: {ticker} - {str(e)}")
-        raise HTTPException(status_code=500, detail="Bad request")
-
-
-
 ##allows a user to retrieve an item by its ticker and display its price data
-@app.get("/instruments/{ticker}/price",status_code=200)
-@app.get("/instruments/{ticker}/prices",status_code=200)
+@router.get("/{ticker}/price",status_code=200)
+@router.get("/{ticker}/prices",status_code=200)
 async def get_price(ticker: str):
 
     if " " in ticker:
@@ -237,7 +168,3 @@ async def get_price(ticker: str):
     except Exception as e:
         logger.error(f"Error occurred while searching for price of ticker: {ticker} :{price} - {str(e)}")
         raise HTTPException(status_code=500, detail="Bad request")
-
-
-
-
