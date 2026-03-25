@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
-from src.models.instrument import Instrument
-import src.services.data_service as ds
-from src.core.logger import get_logger
+from models.instrument import Instrument
+import services.data_service as ds
+from core.logger import get_logger
 from typing import Optional
 import pathlib, json
 import sys
@@ -18,13 +18,6 @@ logger = get_logger()
 @router.get("/")
 async def get_instruments():
     return instruments
-
-##allows a user to access price data
-@router.get("/price")
-@router.get("/prices")
-async def get_prices():
-    return prices
-
 
 #allows a user to search through instruments.json via any of the metrics
 @router.get("/search")
@@ -76,6 +69,7 @@ async def create_instrument(new_instrument: Instrument):
                 raise HTTPException(status_code=409, detail="Instrument with this ticker already exists")
         
 
+        logger.info(f"Ticker created: {new_instrument.ticker.upper()}")
         instruments.append(new_instrument.model_dump())
         ds.save_instruments(instruments)
         return new_instrument

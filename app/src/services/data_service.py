@@ -18,3 +18,7 @@ def load_prices():
         prices = json.load(f)
         prices = prices["prices"]
         return prices
+    
+def save_prices(prices):
+    with open(PRICES_FILE, "w") as f:
+        json.dump({"prices": prices}, f)

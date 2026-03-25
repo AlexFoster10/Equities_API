@@ -4,10 +4,11 @@ from pydantic import BaseModel
 import pathlib, json
 import sys
 import logging
-from src.core.logger import get_logger
-import src.services.data_service as ds 
-from src.models.instrument import Instrument
-import src.routes.instruments as INS
+from core.logger import get_logger
+import services.data_service as ds 
+from models.instrument import Instrument
+from routes.instruments import router as INS
+from routes.prices import router as PRI
 temp = pathlib.Path(__file__).parent.parent.resolve().as_posix()
 sys.path.append(temp)
 app = FastAPI()
@@ -17,7 +18,9 @@ logger = get_logger()
 instruments = ds.load_instruments()
 prices = ds.load_prices()
 
-app.include_router(INS.router, prefix="/instruments", tags=["Instruments"])
+app.include_router(INS, prefix="/instruments", tags=["Instruments"])
+app.include_router(PRI, prefix="/prices", tags=["Prices"])
+
 
 #simple endpoints to return basic data
 @app.get("/")
