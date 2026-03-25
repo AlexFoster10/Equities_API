@@ -31,26 +31,44 @@ def save_prices(prices):
 
 
 def load_tables_db():
-    # try:
-    #     conn = sqlite3.connect("app/data/equities.db")
-    #     cur = conn.cursor()
-    #     cmd = '''SELECT * FROM '''
-
-    df = pd.read_json("app/data/instruments.json")
-    df = pd.json_normalize(df["instruments"])
     try:
         conn = sqlite3.connect("app/data/equities.db")
-        df.to_sql("Instruments", conn, if_exists='fail', index=False)
-        logger.info(f"Data successfully added to equities in table Instruments")
-        conn.close()
+        ins = pd.read_sql_query("SELECT * FROM Instruments",conn)
+        pri = pd.read_sql_query("SELECT * FROM Prices",conn)
+        print(ins.to_string())
+        print(pri.to_string())
+        return ins, pri
     except Exception as e:
         logger.error(f"Error loading the database: {e}")
         return
+
+data = {"ticker": "AAadswPL", 
+         "company_name": "Apple Inc.", 
+         "exchange": "NASDAQ", 
+         "currency": "USD", 
+         "sector": "Technology", 
+         "country": "USA", 
+         "instrument_type": "Equity", 
+         "is_active": True}
+
+def add_entry_ins_db(entry):
+    try:
+        conn = sqlite3.connect("app/data/equities.db")
+        entry = pd.json_normalize(entry)
+        entry.to_sql("Instruments", conn, if_exists='append', index= False)
+        conn.close()
+        logger.info(f"Successfully appended to Instruments table")
+    except Exception as e:
+        logger.error(f"Error occurred while appending to Instruments table: {str(e)}")
+        
+
+
 
 
 def main():
     print(sys.path)
     load_tables_db()
+    add_entry_ins_db(data)
 
 if __name__ == "__main__":
     main()
