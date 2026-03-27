@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from pydantic_extra_types.currency_code import Currency
 
 class Instrument(BaseModel):
@@ -10,3 +10,10 @@ class Instrument(BaseModel):
     country: str
     instrument_type: str
     is_active: bool
+
+    @field_validator("ticker")
+    @classmethod
+    def no_spaces_in_ticker(cls, v):
+        if " " in v:
+            raise ValueError("Ticker must not contain spaces")
+        return v
