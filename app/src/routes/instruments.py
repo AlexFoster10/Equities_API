@@ -3,10 +3,13 @@ from models.instrument import Instrument
 from models.instrumentDB import InstrumentDB as ins_schema
 from models.instrumentUpdate import InstrumentUpdate as ins_up
 from models.instrumentResponse import InstrumentResponse as ins_re
+from models.price import Price
+from models.priceDB import PriceDB as pri_schema
+from models.priceResponse import PriceResponse as pri_re
 import services.data_service as ds
 from core.logger import get_logger
 from typing import Optional
-import pathlib, json
+import pathlib
 import sys
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -70,6 +73,18 @@ async def get_instruments(ticker = str, db: Session = Depends(ds.get_db)):
         raise HTTPException(status_code=404, detail="Ticker not located")
     else:
         return ins
+
+#simple endpoint to return specific instrument prices
+@router.get("/{ticker}/price",  response_model=list[pri_re])
+@router.get("/{ticker}/prices",  response_model=list[pri_re])
+async def get_price(ticker = str, db: Session = Depends(ds.get_db)):
+    pri = db.query(pri_schema).filter(pri_schema.ticker == ticker.upper()).all()
+
+    if not pri:
+        logger.info(f"Ticker could not be located: {ticker}")
+        raise HTTPException(status_code=404, detail="Ticker not located")
+    else:
+        return pri
 
 #allows a user to add instruments 
 @router.post("/", response_model=ins_re, status_code=201)

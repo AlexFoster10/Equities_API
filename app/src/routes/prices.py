@@ -49,6 +49,17 @@ async def create_price(new_price: Price, db: Session = Depends(ds.get_db)):
     except IntegrityError:
         logger.info(f"Ticker with date already exists")
         raise HTTPException(status_code=400, detail="Ticker with date already exists")
+    
+#simple endpoint to return specific instrument prices
+@router.get("/{ticker}",  response_model=list[pri_re])
+async def get_price(ticker = str, db: Session = Depends(ds.get_db)):
+    pri = db.query(pri_schema).filter(pri_schema.ticker == ticker.upper()).all()
+
+    if not pri:
+        logger.info(f"Ticker could not be located: {ticker}")
+        raise HTTPException(status_code=404, detail="Ticker not located")
+    else:
+        return pri
 
 
             
