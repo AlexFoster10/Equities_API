@@ -13,10 +13,6 @@ from models.instrumentDB import Base
 from models.instrumentDB import InstrumentDB as ins_schema
 logger = get_logger()
 
-
-
-INSTRUMENTS_FILE = "app/data/instruments.json"
-PRICES_FILE = "app/data/prices.json"
 DB_FILE = "sqlite:///app/data/equities.db"
 
 engine = create_engine(DB_FILE, connect_args={"check_same_thread": False})

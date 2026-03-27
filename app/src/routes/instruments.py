@@ -22,7 +22,7 @@ async def get_instruments(db: Session = Depends(ds.get_db)):
     ins = db.query(ins_schema).all()
     return ins
 
-#allows a user to search through instruments.json via any of the metrics
+#allows a user to search through database via any of the metrics
 @router.get("/search")
 async def search_instruments(
     sector: Optional[str] = None,
