@@ -9,8 +9,8 @@ from sqlalchemy.orm import sessionmaker
 
 from core.logger import get_logger
 from models.instrument import Instrument
-from models.instrument_db_schema import Base
-from models.instrument_db_schema import Instrument as ins_schema
+from models.instrumentDB import Base
+from models.instrumentDB import InstrumentDB as ins_schema
 logger = get_logger()
 
 

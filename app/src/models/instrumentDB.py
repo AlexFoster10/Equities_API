@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-class Instrument(Base):
+class InstrumentDB(Base):
     __tablename__ = "Instrument_Table"
 
     ticker = Column(String, primary_key=True)

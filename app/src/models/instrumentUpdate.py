@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from pydantic_extra_types.currency_code import Currency
 from typing import Optional
 
-class Instrument_Update(BaseModel):
+class InstrumentUpdate(BaseModel):
     ticker: Optional[str] = None
     company_name: Optional[str] = None
     exchange: Optional[str] = None

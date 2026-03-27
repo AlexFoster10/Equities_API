@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from models.instrument import Instrument
-from models.instrument_db_schema import Instrument as ins_schema
-from models.instrument_update import Instrument_Update as ins_up
-from models.insrument_db_response import InstrumentResponse as ins_re
+from models.instrumentDB import InstrumentDB as ins_schema
+from models.instrumentUpdate import InstrumentUpdate as ins_up
+from models.instrumentResponse import InstrumentResponse as ins_re
 import services.data_service as ds
 from core.logger import get_logger
 from typing import Optional
