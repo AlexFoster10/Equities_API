@@ -3,7 +3,6 @@ from models.instrument import Instrument
 from models.instrumentDB import InstrumentDB as ins_schema
 from models.instrumentUpdate import InstrumentUpdate as ins_up
 from models.instrumentResponse import InstrumentResponse as ins_re
-from models.price import Price
 from models.priceDB import PriceDB as pri_schema
 from models.priceResponse import PriceResponse as pri_re
 import services.data_service as ds
