@@ -14,8 +14,7 @@ sys.path.append(temp)
 app = FastAPI()
 logger = get_logger()
 
-#load file data into variables
-
+#include additional routers
 app.include_router(INS, prefix="/instruments", tags=["Instruments"])
 app.include_router(PRI, prefix="/prices", tags=["Prices"])
 

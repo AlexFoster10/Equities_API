@@ -19,6 +19,7 @@ logger = get_logger()
 @router.get("/", response_model=list[pri_re])
 async def get_price(db: Session = Depends(ds.get_db)):
 
+    #if table doesn't exist create table
     try:
         ds.create_prices_table()
         logger.info(f"Table doesn't exist, creating table")
@@ -33,6 +34,9 @@ async def get_price(db: Session = Depends(ds.get_db)):
 @router.post("/", response_model=pri_re, status_code=201)
 async def create_price(new_price: Price, db: Session = Depends(ds.get_db)):
 
+
+    #if table doesn't exist create table
+
     try:
         ds.create_prices_table()
         logger.info(f"Table doesn't exist, creating table")
@@ -41,6 +45,7 @@ async def create_price(new_price: Price, db: Session = Depends(ds.get_db)):
 
 
     db_price = pri_schema(**new_price.model_dump())
+    
     try:
         db.add(db_price)
         db.commit()

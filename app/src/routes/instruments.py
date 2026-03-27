@@ -22,6 +22,14 @@ logger = get_logger()
 #simple endpoint to return basic data
 @router.get("/", response_model=list[ins_re])
 async def get_instruments(db: Session = Depends(ds.get_db)):
+
+    #if table doesn't exist create table
+    try:
+        ds.create_instrument_table()
+        logger.info(f"Table doesn't exist, creating table")
+    except:
+        logger.info(f"Table exists")
+
     ins = db.query(ins_schema).all()
     return ins
 
@@ -38,6 +46,8 @@ async def search_instruments(
 ):
     results = []
 
+    #returns all items in db and searches through attributes using inputs
+    ## THIS CAN BE IMPROVED
     ins = db.query(ins_schema).all()
 
     for i in ins:
@@ -90,6 +100,7 @@ async def get_price(ticker = str, db: Session = Depends(ds.get_db)):
 @router.post("/", response_model=ins_re, status_code=201)
 async def create_instrument(new_instrument: Instrument, db: Session = Depends(ds.get_db)):
 
+    #if table doesn't exist create table
     try:
         ds.create_instrument_table()
         logger.info(f"Table doesn't exist, creating table")
@@ -98,6 +109,8 @@ async def create_instrument(new_instrument: Instrument, db: Session = Depends(ds
 
 
     db_instrument = ins_schema(**new_instrument.model_dump())
+
+    #try append entry to db, if not return correct status code
     try:
         db.add(db_instrument)
         db.commit()
@@ -115,6 +128,8 @@ async def update_instrument(ticker: str, instrument: ins_up, db: Session = Depen
     if not db_ins:
         logger.info(f"Ticker could not be located: {ticker}")
         raise HTTPException(status_code=404, detail="Ticker not located")
+    
+    #return specific entry from db an update values correspondingly
     db_ins.ticker = instrument.ticker if instrument.ticker is not None else db_ins.ticker
     db_ins.company_name = instrument.company_name if instrument.company_name is not None else db_ins.company_name
     db_ins.exchange = instrument.exchange if instrument.exchange is not None else db_ins.exchange

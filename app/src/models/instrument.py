@@ -1,6 +1,7 @@
 from pydantic import BaseModel, field_validator
 from pydantic_extra_types.currency_code import Currency
 
+#instrument class def
 class Instrument(BaseModel):
     ticker: str
     company_name: str

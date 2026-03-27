@@ -19,6 +19,7 @@ class Price(BaseModel):
         return v
     
 
+    #validators to make sure price attributes are correct
     @model_validator(mode="after")
     @classmethod
     def check_logic(cls, values):

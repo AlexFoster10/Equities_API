@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+#instrment table creation
 class InstrumentDB(Base):
     __tablename__ = "Instrument_Table"
 
