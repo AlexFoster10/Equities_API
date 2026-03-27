@@ -1,16 +1,8 @@
-import json, sqlite3, pathlib, sys
-import pathlib, json, sys
-import pandas as pd
-from fastapi import APIRouter, HTTPException
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-
 from core.logger import get_logger
-from models.instrument import Instrument
-from models.instrumentDB import Base
-from models.instrumentDB import InstrumentDB as ins_schema
+import models.instrumentDB as InstrumentDB
+import models.priceDB as PriceDB
 logger = get_logger()
 
 DB_FILE = "sqlite:///app/data/equities.db"
@@ -28,7 +20,10 @@ def get_db():
     
 
 def create_instrument_table():
-    Base.metadata.create_all(bind=engine)
+    InstrumentDB.Base.metadata.create_all(bind=engine)
+
+def create_prices_table():
+    PriceDB.Base.metadata.create_all(bind=engine)
 
 
 
