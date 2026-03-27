@@ -1,23 +1,25 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from models.instrument import Instrument
+from models.instrument_db_schema import Instrument as ins_schema
+from models.instrument_update import Instrument_Update as ins_up
+from models.insrument_db_response import InstrumentResponse as ins_re
 import services.data_service as ds
 from core.logger import get_logger
 from typing import Optional
 import pathlib, json
 import sys
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 temp = pathlib.Path(__file__).parent.parent.parent.resolve().as_posix()
 sys.path.append(temp)
-
-instruments = ds.load_instruments()
-prices = ds.load_prices()
 
 router = APIRouter()
 logger = get_logger()
 
-#simple endpoints to return basic data
-@router.get("/")
-async def get_instruments():
-    ins, pri = ds.load_tables_db()
+#simple endpoint to return basic data
+@router.get("/", response_model=list[ins_re])
+async def get_instruments(db: Session = Depends(ds.get_db)):
+    ins = db.query(ins_schema).all()
     return ins
 
 #allows a user to search through instruments.json via any of the metrics
@@ -28,24 +30,25 @@ async def search_instruments(
     currency: Optional[str] = None,
     country: Optional[str] = None,
     instrument_type: Optional[str] = None,
-    is_active: Optional[bool] = None
+    is_active: Optional[bool] = None,
+    db: Session = Depends(ds.get_db)
 ):
     results = []
 
-    ins, pri = ds.load_tables_db()
+    ins = db.query(ins_schema).all()
 
     for i in ins:
-        if sector and i["sector"].lower() != sector.lower():
+        if sector and i.sector.lower() != sector.lower():
             continue
-        if exchange and i["exchange"].lower() != exchange.lower():
+        if exchange and i.exchange.lower() != exchange.lower():
             continue
-        if currency and i["currency"].lower() != currency.lower():
+        if currency and i.currency.lower() != currency.lower():
             continue
-        if country and i["country"].lower() != country.lower():
+        if country and i.country.lower() != country.lower():
             continue
-        if instrument_type and i["instrument_type"].lower() != instrument_type.lower():
+        if instrument_type and i.instrument_type.lower() != instrument_type.lower():
             continue
-        if is_active is not None and i["is_active"] != is_active:
+        if is_active is not None and i.is_active != is_active:
             continue
 
         results.append(i)
@@ -56,108 +59,68 @@ async def search_instruments(
 
     else:
         return results
-    
-#allows a user to add instruments 
-@router.post("/", response_model=Instrument, status_code=201)
-async def create_instrument(new_instrument: Instrument):
 
-    if " " in new_instrument.ticker:
-        logger.error(f"Ticker is not valid: {new_instrument.ticker}")
-        raise HTTPException(status_code=400, detail="Invalid ticker")
+#simple endpoint to return specific instrument
+@router.get("/{ticker}", response_model=ins_re)
+async def get_instruments(ticker = str, db: Session = Depends(ds.get_db)):
+    ins = db.query(ins_schema).filter(ins_schema.ticker == ticker.upper()).first()
 
-    try:   
-        res = ds.add_entry_instrument_db(new_instrument)
-        logger.info(f"Ticker created: {new_instrument.ticker.upper()}")
-        if res == 0:
-            raise HTTPException(status_code=409, detail="Instrument with this ticker already exists")
-        
-        return new_instrument
-    
-    except HTTPException:
-        raise
-
-    except Exception as e:
-        logger.error(f"Error occurred while appending ticker: {str(e)}")
-        raise HTTPException(status_code=500, detail="Bad request")
-    
-#allows a user to add instruments or edits existing instruments
-@router.put("/{ticker}", response_model=Instrument, status_code=200)
-async def update_instrument(ticker : str, new_instrument : Instrument):
-    new_instrument.ticker = ticker
-    if " " in ticker:
-        logger.error(f"Ticker is not valid: {ticker}")
-        raise HTTPException(status_code=400, detail="Invalid ticker")
-    
-    try:
-        for instrument in instruments:
-            if instrument["ticker"] == ticker:
-
-                instruments.pop(instruments.index(instrument))
-                instruments.append(new_instrument.model_dump())
-                ds.save_instruments(instruments)
-                logger.info(f"Instrument found with ticker, updated successfully: {ticker}")
-                return new_instrument
-        
-
-        instruments.append(new_instrument.model_dump())
-        ds.save_instruments(instruments)
-        logger.info(f"Ticker could not be located, creating new entry: {ticker}")
-        raise HTTPException(status_code=404, detail="Instrument not found, new entry created")
-    
-    except HTTPException:
-        raise
-
-    except Exception as e:
-        logger.error(f"Error occurred while searching for/appending instrument with ticker: {ticker} - {str(e)}")
-        raise HTTPException(status_code=500, detail="Bad request")
-    
-#allows a user to delete an item from instruments by ticker
-@router.delete("/{ticker}", status_code=200)
-async def delete_instrument(ticker : str):
-    if " " in ticker:
-        logger.error(f"Ticker is not valid: {ticker}")
-        raise HTTPException(status_code=400, detail="Invalid ticker")
-    
-    try:
-        for instrument in instruments:
-            if instrument["ticker"] == ticker:
-
-                deleted = instruments.pop(instruments.index(instrument))
-                ds.save_instruments(instruments)
-                logger.info(f"Instrument found with ticker, deleted successfully: {ticker}")
-                return 
-
+    if not ins:
         logger.info(f"Ticker could not be located: {ticker}")
-        raise HTTPException(status_code=404, detail="Bad request")
-        
-    
-    except HTTPException:
-        raise
+        raise HTTPException(status_code=404, detail="Ticker not located")
+    else:
+        return ins
 
-    except Exception as e:
-        logger.error(f"Error occurred while searching for instrument with ticker: {ticker} - {str(e)}")
-        raise HTTPException(status_code=500, detail="Bad request")
-    
-##allows a user to retrieve an item by its ticker and display its price data
-@router.get("/{ticker}/price",status_code=200)
-@router.get("/{ticker}/prices",status_code=200)
-async def get_price(ticker: str):
+#allows a user to add instruments 
+@router.post("/", response_model=ins_re, status_code=201)
+async def create_instrument(new_instrument: Instrument, db: Session = Depends(ds.get_db)):
 
-    if " " in ticker:
-        logger.error(f"Ticker is not valid: {ticker}")
-        raise HTTPException(status_code=400, detail="Invalid ticker")
-    
     try:
-        for price in prices:
-            if price["ticker"] == ticker:
-                logger.info(f"Price of ticker found: {ticker}: {price}")
-                return price
-        logger.error(f"Error occurred while searching for price of ticker: {ticker} :{price}")
-        raise HTTPException(status_code=404, detail="Price not found")
-    
-    except HTTPException:
-        raise
+        ds.create_instrument_table()
+        logger.info(f"Table doesn't exist, creating table")
+    except:
+        logger.info(f"Table exists")
 
-    except Exception as e:
-        logger.error(f"Error occurred while searching for price of ticker: {ticker} :{price} - {str(e)}")
-        raise HTTPException(status_code=500, detail="Bad request")
+
+    db_instrument = ins_schema(**new_instrument.model_dump())
+    try:
+        db.add(db_instrument)
+        db.commit()
+        db.refresh(db_instrument)
+        return db_instrument
+    except IntegrityError:
+        logger.info(f"Ticker already exists")
+        raise HTTPException(status_code=400, detail="Ticker already exists")
+
+#allows a user to update existing instruments
+@router.put("/{ticker}", response_model=ins_re, status_code=200)
+async def update_instrument(ticker: str, instrument: ins_up, db: Session = Depends(ds.get_db)):
+    db_ins = db.query(ins_schema).filter(ins_schema.ticker == ticker.upper()).first()
+
+    if not db_ins:
+        logger.info(f"Ticker could not be located: {ticker}")
+        raise HTTPException(status_code=404, detail="Ticker not located")
+    db_ins.ticker = instrument.ticker if instrument.ticker is not None else db_ins.ticker
+    db_ins.company_name = instrument.company_name if instrument.company_name is not None else db_ins.company_name
+    db_ins.exchange = instrument.exchange if instrument.exchange is not None else db_ins.exchange
+    db_ins.currency = instrument.currency if instrument.currency is not None else db_ins.currency
+    db_ins.sector = instrument.sector if instrument.sector is not None else db_ins.sector
+    db_ins.country = instrument.country if instrument.country is not None else db_ins.country
+    db_ins.instrument_type = instrument.instrument_type if instrument.instrument_type is not None else db_ins.instrument_type
+    db_ins.is_active = instrument.is_active if instrument.is_active is not None else db_ins.is_active
+    db.commit()
+    db.refresh(db_ins)
+    return db_ins
+
+#allows a user to delete an item from instruments by ticker
+@router.delete("/{ticker}", response_model=ins_re, status_code=200)
+async def delete_instrument(ticker = str, db: Session = Depends(ds.get_db)):
+    db_ins = db.query(ins_schema).filter(ins_schema.ticker == ticker.upper()).first()
+
+    if not db_ins:
+        logger.info(f"Ticker could not be located: {ticker}")
+        raise HTTPException(status_code=404, detail="Ticker not located")
+    db.delete(db_ins)
+    db.commit()
+    return db_ins
+    
