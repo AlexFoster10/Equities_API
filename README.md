@@ -8,9 +8,7 @@ This project allows users to interact with an equitites database via fastapi end
 The project is made of a collection of Fastapi endpoints that allow a user to interact with 2 tables (instruments and prices) with a  variety of CRUD operations. Initially the project used .json files in place of a database, which allowed me to create a template for each endpoint. I then converted the storage system to a sqlite + sqlalchemy system, which greatly improved fastapi endpoint interaction. 
 
 ## Optimizations
-*(optional)*
 I plan to optimise the database search as it currently uses a combination of the new sqlalchemy functions and legacy json db code. It copies all results from the instruments table to a list then searches that, but I'm aware I can just query the database directly and return on results, skipping out the legacy code entirely. 
 
 ## Lessons Learned:
-
 This project really improved my understanding of Fastapi as a whole, it's given me a solid grasp on request validation, database persistence and API error handling. It's also made me really appreciate sqlalchemy as I initially attempted the project without it, harcoding the entire thing with sqlite cursor, which was terrible.  
