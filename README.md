@@ -5,19 +5,12 @@ This project allows users to interact with an equitites database via fastapi end
 
 **Tech used:** Python, Fastapi, Sqlite, sqlalchemy
 
-Here's where you can go to town on how you actually built this thing. Write as much as you can here, 
-it's totally fine if it's not too much just make sure you write *something*. 
-If you don't have too much experience on your resume working on the front end that's 
-totally fine. This is where you can really show off your passion and make up for that ten fold.
-
-Initially the project used .json files in place of a database, which allowed me to create a template for each endpoint
+The project is made of a collection of Fastapi endpoints that allow a user to interact with 2 tables (instruments and prices) with a  variety of CRUD operations. Initially the project used .json files in place of a database, which allowed me to create a template for each endpoint. I then converted the storage system to a sqlite + sqlalchemy system, which greatly improved fastapi endpoint interaction. 
 
 ## Optimizations
 *(optional)*
-
-You don't have to include this section but interviewers *love* that you can not only deliver a final product that looks great but also functions efficiently. Did you write something then refactor it later and the result was 5x faster than the original implementation? Did you cache your assets? Things that you write in this section are **GREAT** to bring up in interviews and you can use this section as reference when studying for technical interviews!
+I plan to optimise the database search as it currently uses a combination of the new sqlalchemy functions and legacy json db code. It copies all results from the instruments table to a list then searches that, but I'm aware I can just query the database directly and return on results, skipping out the legacy code entirely. 
 
 ## Lessons Learned:
 
-No matter what your experience level, being an engineer means continuously learning. Every time you build something you always have those *whoa this is awesome* or *wow I actually did it!* moments. This is where you should share those moments! Recruiters and interviewers love to see that you're self-aware and passionate about growing.
-This is the first project in which I have used Fastapi, and sqlalchemy. I have found it really rewarding to tackle something  
+This project really improved my understanding of Fastapi as a whole, it's given me a solid grasp on request validation, database persistence and API error handling. It's also made me really appreciate sqlalchemy as I initially attempted the project without it, harcoding the entire thing with sqlite cursor, which was terrible.  
