@@ -26,6 +26,12 @@ def create_prices_table():
     PriceDB.Base.metadata.create_all(bind=engine)
 
 
+##create generic search function
+def search_instrument_by_symbol(db, InstrumentDB, PriceDB):
+    
+
+
+
 
 
 
