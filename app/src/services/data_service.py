@@ -28,7 +28,8 @@ def create_prices_table():
 
 ##create generic search function
 def search_instrument_by_symbol(db, InstrumentDB, PriceDB):
-    
+    print("")
+
 
 
 
